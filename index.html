@@ -3,19 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Шахматы</title>
+    <title>Шахматы с выбором сложности</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div class="container">
         <h1>Шахматы</h1>
         
+        <!-- Главное меню -->
         <div class="menu" id="mainMenu">
             <h2>Выберите режим игры</h2>
             <button onclick="startGame('vsHuman')">👥 Против человека</button>
             <button onclick="showAIMenu()">🤖 Против компьютера</button>
         </div>
 
+        <!-- Меню выбора сложности -->
         <div class="menu hidden" id="aiMenu">
             <h2>Выберите сложность</h2>
             <button onclick="startGame('vsAI', 'easy')">🌱 Легко</button>
@@ -24,6 +26,7 @@
             <button onclick="backToMainMenu()">← Назад</button>
         </div>
 
+        <!-- Игровой контейнер -->
         <div class="game-container hidden" id="gameContainer">
             <div class="game-info">
                 <div class="turn-indicator" id="turnIndicator">Ход белых</div>
@@ -31,6 +34,18 @@
             </div>
             <div class="board" id="board"></div>
             <div class="game-status" id="gameStatus"></div>
+        </div>
+    </div>
+
+    <!-- Модальное окно окончания игры -->
+    <div class="modal hidden" id="gameOverModal">
+        <div class="modal-content">
+            <h2 id="gameOverTitle">Игра окончена!</h2>
+            <p id="gameOverMessage"></p>
+            <div class="modal-buttons">
+                <button onclick="playAgain()">🔄 Играть снова</button>
+                <button onclick="backToMainMenuFromModal()">🏠 Главное меню</button>
+            </div>
         </div>
     </div>
 

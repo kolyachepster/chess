@@ -6,6 +6,8 @@ class ChessBoard {
         this.validMoves = [];
         this.gameOver = false;
         this.winner = null;
+        this.checkStatus = { white: false, black: false };
+        this.moveHistory = [];
         this.setupBoard();
     }
 
@@ -87,6 +89,16 @@ class ChessBoard {
 
     movePiece(fromRow, fromCol, toRow, toCol) {
         const piece = this.board[fromRow][fromCol];
+        const capturedPiece = this.board[toRow][toCol];
+        
+        // Записываем ход в историю
+        this.moveHistory.push({
+            piece: { ...piece },
+            from: [fromRow, fromCol],
+            to: [toRow, toCol],
+            captured: capturedPiece ? { ...capturedPiece } : null
+        });
+
         this.board[toRow][toCol] = piece;
         this.board[fromRow][fromCol] = null;
         piece.hasMoved = true;
@@ -100,55 +112,88 @@ class ChessBoard {
             }
         }
 
+        // Проверка на шах
+        this.updateCheckStatus();
+
         // Проверка на мат
-        this.checkGameOver();
+        if (this.isCheckmate()) {
+            this.gameOver = true;
+            this.winner = this.currentTurn === COLORS.WHITE ? COLORS.BLACK : COLORS.WHITE;
+        }
 
         // Смена хода
         this.currentTurn = this.currentTurn === COLORS.WHITE ? COLORS.BLACK : COLORS.WHITE;
     }
 
-    checkGameOver() {
-        // Проверяем, есть ли король у текущего игрока
-        let kingFound = false;
-        for (let i = 0; i < 8; i++) {
-            for (let j = 0; j < 8; j++) {
-                const piece = this.board[i][j];
-                if (piece && piece.type === PIECE_TYPES.KING && piece.color === this.currentTurn) {
-                    kingFound = true;
-                    
-                    // Проверяем, есть ли у короля ходы
-                    const kingMoves = piece.getPossibleMoves(this.board, i, j);
-                    if (kingMoves.length === 0) {
-                        // Проверяем, может ли какая-то другая фигура походить
-                        let anyMove = false;
-                        for (let r = 0; r < 8; r++) {
-                            for (let c = 0; c < 8; c++) {
-                                const p = this.board[r][c];
-                                if (p && p.color === this.currentTurn) {
-                                    const moves = p.getPossibleMoves(this.board, r, c);
-                                    if (moves.length > 0) {
-                                        anyMove = true;
-                                        break;
-                                    }
-                                }
-                            }
-                            if (anyMove) break;
-                        }
-                        
-                        if (!anyMove) {
-                            this.gameOver = true;
-                            this.winner = this.currentTurn === COLORS.WHITE ? COLORS.BLACK : COLORS.WHITE;
-                        }
-                    }
-                    break;
+    updateCheckStatus() {
+        // Проверяем, находится ли король белых под шахом
+        const whiteKingPos = this.findKing(COLORS.WHITE);
+        if (whiteKingPos) {
+            this.checkStatus.white = this.isSquareAttacked(
+                whiteKingPos.row, 
+                whiteKingPos.col, 
+                COLORS.WHITE
+            );
+        }
+
+        // Проверяем, находится ли король черных под шахом
+        const blackKingPos = this.findKing(COLORS.BLACK);
+        if (blackKingPos) {
+            this.checkStatus.black = this.isSquareAttacked(
+                blackKingPos.row, 
+                blackKingPos.col, 
+                COLORS.BLACK
+            );
+        }
+    }
+
+    findKing(color) {
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                const piece = this.board[row][col];
+                if (piece && piece.type === PIECE_TYPES.KING && piece.color === color) {
+                    return { row, col };
                 }
             }
         }
-        
-        if (!kingFound) {
-            this.gameOver = true;
-            this.winner = this.currentTurn === COLORS.WHITE ? COLORS.BLACK : COLORS.WHITE;
+        return null;
+    }
+
+    isSquareAttacked(row, col, defendingColor) {
+        for (let i = 0; i < 8; i++) {
+            for (let j = 0; j < 8; j++) {
+                const piece = this.board[i][j];
+                if (piece && piece.color !== defendingColor) {
+                    const moves = piece.getPossibleMoves(this.board, i, j, false);
+                    if (moves.some(([r, c]) => r === row && c === col)) {
+                        return true;
+                    }
+                }
+            }
         }
+        return false;
+    }
+
+    isCheckmate() {
+        const color = this.currentTurn;
+        const isInCheck = color === COLORS.WHITE ? this.checkStatus.white : this.checkStatus.black;
+        
+        if (!isInCheck) return false;
+
+        // Проверяем, есть ли у игрока ходы, которые выводят из шаха
+        for (let row = 0; row < 8; row++) {
+            for (let col = 0; col < 8; col++) {
+                const piece = this.board[row][col];
+                if (piece && piece.color === color) {
+                    const moves = piece.getPossibleMoves(this.board, row, col);
+                    if (moves.length > 0) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
     }
 
     makeAIMove(ai) {
@@ -160,5 +205,14 @@ class ChessBoard {
             return true;
         }
         return false;
+    }
+
+    getGameState() {
+        return {
+            gameOver: this.gameOver,
+            winner: this.winner,
+            currentTurn: this.currentTurn,
+            checkStatus: this.checkStatus
+        };
     }
 }

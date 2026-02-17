@@ -3,11 +3,12 @@ class ChessGame {
         this.board = null;
         this.ai = null;
         this.mode = null; // 'vsHuman' или 'vsAI'
-        this.renderer = null;
+        this.difficulty = null;
     }
 
     init(mode, difficulty = null) {
         this.mode = mode;
+        this.difficulty = difficulty;
         this.board = new ChessBoard();
         
         if (mode === 'vsAI' && difficulty) {
@@ -16,6 +17,9 @@ class ChessGame {
 
         this.renderBoard();
         this.updateTurnIndicator();
+        
+        // Скрываем модальное окно, если оно было открыто
+        document.getElementById('gameOverModal').classList.add('hidden');
     }
 
     renderBoard() {
@@ -49,6 +53,16 @@ class ChessGame {
                     }
                 }
 
+                // Подсветка шаха
+                const kingPos = this.board.findKing(this.board.currentTurn);
+                if (kingPos && kingPos.row === row && kingPos.col === col) {
+                    const isInCheck = this.board.currentTurn === COLORS.WHITE ? 
+                        this.board.checkStatus.white : this.board.checkStatus.black;
+                    if (isInCheck) {
+                        square.style.backgroundColor = '#ff6b6b';
+                    }
+                }
+
                 square.addEventListener('click', () => this.handleSquareClick(row, col));
                 boardElement.appendChild(square);
             }
@@ -56,10 +70,7 @@ class ChessGame {
 
         // Проверка на конец игры
         if (this.board.gameOver) {
-            const winner = this.board.winner === COLORS.WHITE ? 'Белые' : 'Черные';
-            document.getElementById('gameStatus').textContent = `Игра окончена! Победили ${winner}`;
-        } else {
-            document.getElementById('gameStatus').textContent = '';
+            this.showGameOverModal();
         }
     }
 
@@ -68,10 +79,17 @@ class ChessGame {
 
         this.board.selectSquare(row, col);
         this.renderBoard();
+        this.updateTurnIndicator();
+
+        // Проверка на окончание игры после хода
+        if (this.board.gameOver) {
+            this.showGameOverModal();
+            return;
+        }
 
         // Если режим против ИИ и сейчас ход черных (ИИ)
         if (this.mode === 'vsAI' && this.board.currentTurn === COLORS.BLACK && !this.board.gameOver) {
-            setTimeout(() => this.makeAIMove(), 100);
+            setTimeout(() => this.makeAIMove(), 300);
         }
     }
 
@@ -82,23 +100,64 @@ class ChessGame {
         if (moveMade) {
             this.renderBoard();
             this.updateTurnIndicator();
+            
+            // Проверка на окончание игры после хода ИИ
+            if (this.board.gameOver) {
+                this.showGameOverModal();
+            }
         }
     }
 
     updateTurnIndicator() {
         const indicator = document.getElementById('turnIndicator');
+        const isInCheck = this.board.currentTurn === COLORS.WHITE ? 
+            this.board.checkStatus.white : this.board.checkStatus.black;
+        
+        let turnText = this.board.currentTurn === COLORS.WHITE ? 'Белые' : 'Черные';
+        
         if (this.board.gameOver) {
             const winner = this.board.winner === COLORS.WHITE ? 'Белые' : 'Черные';
             indicator.textContent = `Победили ${winner}!`;
         } else {
-            indicator.textContent = `Ход ${this.board.currentTurn === COLORS.WHITE ? 'белых' : 'черных'}`;
+            indicator.textContent = `Ход ${turnText}`;
+            if (isInCheck) {
+                indicator.textContent += ' (ШАХ!)';
+                indicator.style.backgroundColor = '#ff6b6b';
+                indicator.style.color = 'white';
+            } else {
+                indicator.style.backgroundColor = '';
+                indicator.style.color = '';
+            }
         }
     }
 
+    showGameOverModal() {
+        const modal = document.getElementById('gameOverModal');
+        const message = document.getElementById('gameOverMessage');
+        const title = document.getElementById('gameOverTitle');
+        
+        let winnerText = '';
+        let emoji = '';
+        
+        if (this.board.winner === COLORS.WHITE) {
+            winnerText = 'Белые';
+            emoji = '👑';
+        } else if (this.board.winner === COLORS.BLACK) {
+            winnerText = 'Черные';
+            emoji = '👑';
+        } else {
+            winnerText = 'Ничья';
+            emoji = '🤝';
+        }
+        
+        title.textContent = winnerText === 'Ничья' ? 'Ничья!' : 'Победа!';
+        message.innerHTML = `${emoji} <strong>${winnerText}</strong> ${winnerText === 'Ничья' ? '' : 'одержали победу!'}`;
+        
+        modal.classList.remove('hidden');
+    }
+
     reset() {
-        this.board = new ChessBoard();
-        this.renderBoard();
-        this.updateTurnIndicator();
+        this.init(this.mode, this.difficulty);
     }
 }
 
