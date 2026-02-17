@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Шахматы</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Шахматы</h1>
+        
+        <div class="menu" id="mainMenu">
+            <h2>Выберите режим игры</h2>
+            <button onclick="startGame('vsHuman')">👥 Против человека</button>
+            <button onclick="showAIMenu()">🤖 Против компьютера</button>
+        </div>
+
+        <div class="menu hidden" id="aiMenu">
+            <h2>Выберите сложность</h2>
+            <button onclick="startGame('vsAI', 'easy')">🌱 Легко</button>
+            <button onclick="startGame('vsAI', 'medium')">🌿 Средне</button>
+            <button onclick="startGame('vsAI', 'hard')">🌳 Сложно</button>
+            <button onclick="backToMainMenu()">← Назад</button>
+        </div>
+
+        <div class="game-container hidden" id="gameContainer">
+            <div class="game-info">
+                <div class="turn-indicator" id="turnIndicator">Ход белых</div>
+                <button class="new-game-btn" onclick="showMainMenu()">Новая игра</button>
+            </div>
+            <div class="board" id="board"></div>
+            <div class="game-status" id="gameStatus"></div>
+        </div>
+    </div>
+
+    <script src="js/pieces.js"></script>
+    <script src="js/board.js"></script>
+    <script src="js/ai.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/menu.js"></script>
+</body>
+</html>
